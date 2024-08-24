@@ -93,7 +93,7 @@ Various Python functions have been developed to implement and incorporate the an
 ---
 
 ## 🏗️ Getting Started with CyberDefense
-###### Python 3.7 or Python 3.8
+###### Running on Python 3.8+, because there is problem installing scipy with Python 3.7 on latest system such as Macbook M2 chip. Recommend using pyenv to install python, because it makes command python available along with command python3. However, time.perf_counter() is removed on Python 3.8+, need to replace it with time.perf_counter().
 
 ### External Libraries
 The web-based **CyberDefense** version relies on additional external libraries. 

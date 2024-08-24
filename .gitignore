@@ -136,3 +136,8 @@ dmypy.json
 src/CSharp_Tool_BGP/ConsoleApplication1/bin/Release/DUMP_featureselection.txt
 src/data_test/DUMP_out.txt
 src/STAT/sample.zip
+src/data_ripe
+src/data_split
+src/RNN_Running_Code/RNN_Run/tmp
+src/STAT
+DUMP

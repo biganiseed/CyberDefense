@@ -203,7 +203,7 @@ class RNN(nn.Module):
         return x
 
 rnn = RNN()
-start = time.clock()
+start = time.perf_counter()
 rnn.train()
 
 if torch.cuda.is_available():
@@ -265,7 +265,7 @@ for epoch in range(num_epochs):
 
 
 
-end = time.clock()
+end = time.perf_counter()
 
 
 

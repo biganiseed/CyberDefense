@@ -238,7 +238,7 @@ class RNN(nn.Module):
 
 
 rnn = RNN()
-start = time.clock()
+start = time.perf_counter()
 rnn.train()
 
 if torch.cuda.is_available():
@@ -290,7 +290,7 @@ for epoch in range(num_epochs):
         optimizer.step()                                                      # apply gradients
 
 
-end = time.clock()
+end = time.perf_counter()
 
 
 

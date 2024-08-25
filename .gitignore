@@ -141,3 +141,10 @@ src/data_split
 src/RNN_Running_Code/RNN_Run/tmp
 src/STAT
 DUMP
+src/RNN_Running_Code/data_representation/res_run
+src/RNN_Running_Code/data_representation/res_acc
+src/BiRNN_Running_Code/data_representation/res_acc
+src/BiRNN_Running_Code/data_representation/res_run
+src/RNN_Running_Code/RNN_Run/experiment
+src/RNN_Running_Code/RNN_Run/res_acc
+src/RNN_Running_Code/RNN_Run/res_run

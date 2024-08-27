@@ -35,7 +35,7 @@ from scipy.linalg import orth
 from numpy.linalg import inv
 
 # Import customized libraries
-# sys.path.append("..")
+sys.path.append('./src/VFBLS_v110')
 from bls.processing.result import result
 from bls.processing.sparse_bls import sparse_bls
 

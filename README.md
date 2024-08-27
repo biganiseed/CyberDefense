@@ -158,5 +158,16 @@ Sample code for gradient boosting machines may be run without launching the `app
 Please see details in `README.md`.
 
 ---
+
+---
+## 🎡 Experiments
+Some handy experiment tools based on Jupyter notebook.
+* xpr_BGP_relatime_data.ipynb : Learn how to download real time BGP messages and prepare for classification with pre-trained BLS models.
+* xpr_BGP_offline_data.ipynb : Learn how to download historical BGP messages including anomalies and prepare for training and testing.
+* xpr_train_and_test.ipynb : Learn how to train RNN models with offline datasets.
+* xpr_BLS_historical.ipynb : Use historical datasets to experiment data aggregation idea, includs complete process from data preparation to train and test.
+
+---
+
 ## 📚 License
 The **CyberDefense** is open-sourced tool under the terms of the MIT license.

@@ -17,3 +17,4 @@ six
 Werkzeug==2.0.1
 eventlet
 psutil
+matplotlib

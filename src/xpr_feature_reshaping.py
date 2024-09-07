@@ -83,6 +83,10 @@ def aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to
     aggregated[:, columns_to_sum] = reshaped[:, :, columns_to_sum].sum(axis=1)
     aggregated[:, columns_to_mean] = reshaped[:, :, columns_to_mean].mean(axis=1)
     aggregated[:, columns_to_max] = reshaped[:, :, columns_to_max].max(axis=1)
+    # aggregated[:, columns_to_sum] = np.median(reshaped[:, :, columns_to_sum], axis=1)
+    # aggregated[:, columns_to_mean] = np.median(reshaped[:, :, columns_to_mean], axis=1)
+    # aggregated[:, columns_to_max] = np.median(reshaped[:, :, columns_to_max], axis=1)
+    
     aggregated[:, -1] = np.round(np.sum(reshaped[:, :, -1] == 1, axis=1)/n)*2-1  # Apply mean and round to the label
     
     return aggregated
@@ -169,4 +173,37 @@ if __name__ == '__main__':
     output = aggregate_rows_with_sliding_window(arr, n, columns_to_keep, columns_to_sum, columns_to_mean, columns_to_max)
     print("Expected output:", arr)
     print("Actual   output:", output)
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler 
+from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import PowerTransformer
+from scipy.stats import zscore
+
+def norm( train_x, test_x, scaleType = "Std" ):
+    if scaleType == "zscore" :
+        print("zscore")
+        train_x = zscore(train_x, axis=0, ddof=1);  # For each feature, mean = 0 and std = 1
+        test_x = zscore(test_x, axis=0, ddof=1);  # For each feature, mean = 0 and std = 1
+        return train_x, test_x
+    
+    
+    if scaleType == "Std" :
+        scaler = StandardScaler()
+    elif scaleType == "MinMax" :
+        scaler = MinMaxScaler()
+    elif scaleType == "Robust" :    
+        scaler = RobustScaler() 
+    elif scaleType == "Power" :    
+        scaler = PowerTransformer()   
+    elif scaleType == "MinMax" :  
+        scaler = MinMaxScaler()
+    else :    
+        scaler = StandardScaler()
+        
+    scaler.fit(train_x)
+    train_x = scaler.transform(train_x)
+    # scaler.fit(test_x)
+    test_x = scaler.transform(test_x)
+    return train_x, test_x
 

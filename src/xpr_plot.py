@@ -10,6 +10,7 @@
 """
 import matplotlib.pyplot as plt
 
+# Parameter number starts from 1 to be consistent with the feature definition.
 def feature_name( number ):
     return [
         "Number of announcements",

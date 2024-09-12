@@ -204,6 +204,7 @@ def norm( train_x, test_x, scaleType = "Std" ):
     scaler.fit(train_x)
     train_x = scaler.transform(train_x)
     # scaler.fit(test_x)
-    test_x = scaler.transform(test_x)
+    if( test_x != None ):
+        test_x = scaler.transform(test_x)
     return train_x, test_x
 

@@ -68,6 +68,8 @@ def show_hist( feature, title = "Feature Hist", sub = None, fig = None ):
     if sub is None:
         plt.title( title )
         plt.show()
+    else:
+        sub.set_title( title )
 
 def show_feature_label( feature , label, title = "Feature Line", sub = None, fig = None ):
     if sub is not None:
@@ -92,3 +94,5 @@ def show_feature_label( feature , label, title = "Feature Line", sub = None, fig
         # 显示图表
         fig.tight_layout()  # 调整布局，防止标签重叠
         plt.show()  
+    else:
+        sub.set_title( title )

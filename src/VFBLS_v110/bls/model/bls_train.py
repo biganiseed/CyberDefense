@@ -68,7 +68,7 @@ def bls_train_realtime(train_x, train_y, test_x,
     time_start = time.time()
     beta11 = [];
 
-    train_x = zscore(train_x.transpose(), axis=0, ddof=1).transpose();
+    # train_x = zscore(train_x.transpose(), axis=0, ddof=1).transpose();
     H1 = np.concatenate((train_x, 0.1 * np.ones((train_x.shape[0], 1))), axis=1);
 
     y = np.zeros((train_x.shape[0], N2 * N1));
@@ -166,7 +166,7 @@ def bls_train_realtime(train_x, train_y, test_x,
     ### Testing Process
     # Testing - begin
     time_start = time.time()
-    test_x = zscore((test_x).transpose(), axis=0, ddof=1).transpose();
+    # test_x = zscore((test_x).transpose(), axis=0, ddof=1).transpose();
 
     HH1 = np.concatenate((test_x, 0.1 * np.ones((test_x.shape[0], 1))), axis=1);
     yy1 = np.zeros((test_x.shape[0], N2 * N1));

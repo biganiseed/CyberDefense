@@ -1,5 +1,18 @@
+import numpy as np
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
+def load_historical_datasets():
+    path_app = "src"
+    dataset0 = np.loadtxt("./%s/data_historical/Code_Red_I.csv" % path_app, delimiter=",")
+    dataset1 = np.loadtxt("./%s/data_historical/Nimda.csv" % path_app, delimiter=",")
+    dataset2 = np.loadtxt("./%s/data_historical/Slammer.csv" % path_app, delimiter=",")
+    dataset3 = np.loadtxt("./%s/data_historical/Moscow_blackout.csv" % path_app, delimiter=",")
+    dataset4 = np.loadtxt("./%s/data_historical/WannaCrypt.csv" % path_app, delimiter=",")
+    dataset5 = np.loadtxt("./%s/data_historical/RIPE_regular.csv" % path_app, delimiter=",")
+    dataset6 = np.loadtxt("./%s/data_historical/BCNET_regular.csv" % path_app, delimiter=",")
+    return {"Code_Red_I": dataset0, "Nimda": dataset1, "Slammer": dataset2, "Moscow_blackout": dataset3, "WannaCrypt": dataset4, "RIPE_regular": dataset5, "BCNET_regular": dataset6}    
 
 def concatenate_datasets(datasets):
     result = datasets[0]
@@ -20,8 +33,7 @@ def preprocess( dataset, div = 1 ):
 from src.VFBLS_v110.bls.processing.one_hot_m import one_hot_m
 from src.VFBLS_v110.bls.model.bls_train import bls_train_realtime
 
-print("======================= BLS =======================\n")
-def xpr_train_test(train_x, train_y, test_x):
+def BLS_train_test(train_x, train_y, test_x):
     # Set parameters
     mem = 'low'
     # mem = 'high'
@@ -93,5 +105,118 @@ def xpr_test( raw_train_datasets, raw_test_dataset, time_span, normtype="Power",
     train_x, test_x = norm( train_x, test_x, normtype)
     
 
-    predicted_list = xpr_train_test(train_x, train_y, test_x)
+    predicted_list = BLS_train_test(train_x, train_y, test_x)
     return predicted_list
+
+# Run integrated test with speficied algorithm, time span list, data combos.
+# Optional parameters: sliding_window, scaleType, results_file, datasets
+def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
+    sliding_window = kwargs.get("sliding_window", False)
+    scaleType = kwargs.get("scaleType", "Std")
+    results_file = kwargs.get("results_file", "src/STAT/xpr_results.csv")
+    datasets = kwargs.get("datasets", load_historical_datasets())
+
+    # Print the information of the data combinations
+    for combo in data_combos:
+        raw_train_datasets = []
+        for name in combo["train"]:
+            raw_train_datasets.append(datasets[name])
+        raw_test_dataset = datasets[combo["test"]]
+        print(f"Data combo: {combo}")
+        print("Raw training datasets shape: ", [x.shape for x in raw_train_datasets])
+        print("Raw training labels of regular and anomaly: ", [(np.sum(x[:,-1]==-1, axis=0), np.sum(x[:,-1]==1, axis=0)) for x in raw_train_datasets])
+        print("Raw test dataset shape: ", raw_test_dataset.shape)
+        print("Raw test labels of regular and anomaly: ", np.sum(raw_test_dataset[:,-1]==-1, axis=0), np.sum(raw_test_dataset[:,-1]==1, axis=0))
+        
+    header = ["Train datasets", "Test datasets", "Time span", "Accuracy %", "Fscore %", "Precision %", "Recall %"]
+    results = []
+    average_results = []
+    for time_span in time_span_list:
+        print(f"------------------------------ Time span: {time_span} ------------------------------")
+        averages = np.zeros(len(header)-3)
+        for combo in data_combos:
+            raw_train_datasets = []
+            for name in combo["train"]:
+                raw_train_datasets.append(datasets[name])
+            raw_test_dataset = datasets[combo["test"]]
+            print(f"Data combo: {combo}")
+            train_datasets = aggregate_datasets(raw_train_datasets, time_span, sliding_window)
+            test_dataset = aggregate_rows(raw_test_dataset, time_span, sliding_window)
+            train_dataset = concatenate_datasets(train_datasets)
+            
+            train_x, train_y = preprocess(train_dataset)
+            test_x, test_y = preprocess(test_dataset)
+            train_x, test_x = norm( train_x, test_x, scaleType)
+
+            old_stdout = blockPrint()
+            predicted_list = algorithm(train_x, train_y, test_x)
+            enablePrint(old_stdout)
+
+            accuracy = accuracy_score(test_y, predicted_list)
+            fscore = f1_score(test_y, predicted_list)
+            precision = precision_score(test_y, predicted_list)
+            recall = recall_score(test_y, predicted_list)
+
+            averages += np.array([accuracy, fscore, precision, recall]) 
+            row = ["+".join(combo["train"]), combo["test"], f"{time_span}", f"{accuracy*100:.2f}", f"{fscore*100:.2f}", f"{precision*100:.2f}", f"{recall*100:.2f}"]
+            # row = ["+".join(combo["train"]), combo["test"], time_span, accuracy*100, fscore*100]
+            results.append(row)
+            print(f"Accuracy: {accuracy:.2%}, Fscore: {fscore:.2%}, Precision: {precision:.2%}, Recall: {recall:.2%}")
+        averages = averages / len(data_combos)
+        row = ["Average", "Average", f"{time_span}", f"{averages[0]*100:.2f}", f"{averages[1]*100:.2f}", f"{averages[2]*100:.2f}", f"{averages[3]*100:.2f}"]
+        print(f"Average: {averages}")
+        average_results.append(row)
+
+    results.insert(0, header)
+    results.extend(average_results)
+    results = np.array(results)
+
+    # Save the results to file
+    os.makedirs(os.path.dirname(results_file), exist_ok=True)
+    np.savetxt(results_file, results, delimiter=",", fmt="%s")
+    print("\nResults saved to", results_file)    
+    return results
+
+# Plot the results of the aggregation test
+def plot_aggregation_test_results(results, time_span_list):
+    # Plot each series in a subplot
+    def subplot(label, series, ax, data_column):
+        for series in series:
+            mask = np.array([row[1] == series for row in results])
+            x = results[mask, 2].astype(int)
+            y = results[mask, data_column].astype(float)
+            line = ax.plot(x, y, label=series)[0]
+            
+            # Add annotation for the point of baseline
+            ax.annotate(f'{y[0]:.2f}', xy=(x[0], y[0]), xytext=(x[0] + 2, y[0]),
+                        color=ax.lines[-1].get_color(), arrowprops=dict(arrowstyle='->'))
+            
+            # Find the index of the maximum value in y
+            max_idx = np.argmax(y)
+            max_x = x[max_idx]
+            max_y = y[max_idx]
+            
+            # Draw a vertical line at the maximum value
+            ax.axvline(x=max_x, color=ax.lines[-1].get_color(), linestyle='--')
+            
+            # Annotate the maximum value
+            ax.annotate(f'{max_y:.2f}', xy=(max_x, max_y), xytext=(max_x + 1, max_y),
+                        color=ax.lines[-1].get_color(), arrowprops=dict(arrowstyle='->'))
+        
+        ax.set_xlabel('Time Span')
+        ax.set_ylabel(label)
+        ax.set_xlim(left=1)
+        ax.set_ylim(0, 100)
+        ax.set_xticks(time_span_list)
+        ax.legend()
+        # fig.suptitle('Comparison of different time spans')
+
+    series = np.unique(results[1:, 1])
+    fig, ((ax1, ax2),(ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    subplot('Accuracy', series, ax1, 3)
+    subplot('Fscore', series, ax2, 4)
+    subplot('Precision', series, ax3, 5)
+    subplot('Recall',series, ax4, 6)
+
+    plt.tight_layout()
+    plt.show()    

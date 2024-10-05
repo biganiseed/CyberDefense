@@ -53,7 +53,7 @@ import numpy as np
     the output will be: [[-1], [1], [1], [-1], [-1]] without sliding_window.
     With sliding window, the output will be: [[-1], [-1], [-1], [1], [1], [1], [1], [-1], [-1], [-1]]
 """
-def aggregate_rows(arr, n, sliding_window=False):
+def aggregate_rows(arr, n, sliding_window=False, agg_type="origin"):
     # Apply different aggregation functions to different columns
     coloumns_to_keep = [0, 1, 2, 3]
     # Set items with feature number.
@@ -66,11 +66,11 @@ def aggregate_rows(arr, n, sliding_window=False):
     columns_to_max = [x+3 for x in columns_to_max]
 
     if sliding_window:
-        return aggregate_rows_with_sliding_window(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max)
+        return aggregate_rows_with_sliding_window(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type=agg_type)
     else:
-        return aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max)
+        return aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type=agg_type )
 
-def aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max):
+def aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type="origin"):
     # Calculate the number of rows to keep to ensure the number of rows is a multiple of n
     rows_to_keep = (arr.shape[0] // n) * n
     arr = arr[:rows_to_keep]
@@ -79,36 +79,49 @@ def aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to
     reshaped = arr.reshape(-1, n, arr.shape[1])
     
     aggregated = np.zeros((reshaped.shape[0], reshaped.shape[2]))
-    aggregated[:, coloumns_to_keep] = reshaped[:, 0, coloumns_to_keep]  # Apply values of the first row in the group
-    aggregated[:, columns_to_sum] = reshaped[:, :, columns_to_sum].sum(axis=1)
-    aggregated[:, columns_to_mean] = reshaped[:, :, columns_to_mean].mean(axis=1)
-    aggregated[:, columns_to_max] = reshaped[:, :, columns_to_max].max(axis=1)
-    # aggregated[:, columns_to_sum] = np.median(reshaped[:, :, columns_to_sum], axis=1)
-    # aggregated[:, columns_to_mean] = np.median(reshaped[:, :, columns_to_mean], axis=1)
-    # aggregated[:, columns_to_max] = np.median(reshaped[:, :, columns_to_max], axis=1)
+
+    if agg_type == "median":
+        aggregated[:, coloumns_to_keep] = reshaped[:, 0, coloumns_to_keep]  # Apply values of the first row in the group
+        aggregated[:, columns_to_sum] = np.median(reshaped[:, :, columns_to_sum], axis=1)
+        aggregated[:, columns_to_mean] = np.median(reshaped[:, :, columns_to_mean], axis=1)
+        aggregated[:, columns_to_max] = np.median(reshaped[:, :, columns_to_max], axis=1)
+    else: 
+        aggregated[:, coloumns_to_keep] = reshaped[:, 0, coloumns_to_keep]  # Apply values of the first row in the group
+        aggregated[:, columns_to_sum] = reshaped[:, :, columns_to_sum].sum(axis=1)
+        aggregated[:, columns_to_mean] = reshaped[:, :, columns_to_mean].mean(axis=1)
+        aggregated[:, columns_to_max] = reshaped[:, :, columns_to_max].max(axis=1)
+
     
     aggregated[:, -1] = np.round(np.sum(reshaped[:, :, -1] == 1, axis=1)/n)*2-1  # Apply mean and round to the label
     
     return aggregated
 
-def aggregate_rows_with_sliding_window(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max):
+def aggregate_rows_with_sliding_window(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type="origin"):
     
     aggregated = np.zeros(arr.shape)    
     for i in range(arr.shape[0]):
         j = i+1
         sliding_window = arr[j-(min(j,n)):j]
         aggregated[i, coloumns_to_keep] = arr[i, coloumns_to_keep] # Just keep the value.
-        aggregated[i, columns_to_sum] = sliding_window[:, columns_to_sum].sum(axis=0)
-        aggregated[i, columns_to_mean] = sliding_window[:, columns_to_mean].mean(axis=0)
-        aggregated[i, columns_to_max] = sliding_window[:, columns_to_max].max(axis=0)
+
+        if agg_type == "median":
+            aggregated[:, columns_to_sum] = np.median(sliding_window[:, columns_to_sum], axis=1)
+            aggregated[:, columns_to_mean] = np.median(sliding_window[:, columns_to_mean], axis=1)
+            aggregated[:, columns_to_max] = np.median(sliding_window[:, columns_to_max], axis=1)
+        else:  
+            aggregated[i, columns_to_sum] = sliding_window[:, columns_to_sum].sum(axis=0)
+            aggregated[i, columns_to_mean] = sliding_window[:, columns_to_mean].mean(axis=0)
+            aggregated[i, columns_to_max] = sliding_window[:, columns_to_max].max(axis=0)
+        
         aggregated[i, -1] = np.round(np.sum(sliding_window[:, -1] == 1)/n)*2-1
+        
     
     return aggregated
 
-def aggregate_datasets(datasets, time_span, sliding_window=False):
+def aggregate_datasets(datasets, time_span, sliding_window=False, agg_type="origin" ):
     aggregated_datasets = []
     for dataset in datasets:
-        aggregated_datasets.append(aggregate_rows(dataset, time_span, sliding_window))
+        aggregated_datasets.append(aggregate_rows(dataset, time_span, sliding_window, agg_type=agg_type))
     return aggregated_datasets
 
 # Test the function
@@ -207,4 +220,24 @@ def norm( train_x, test_x, scaleType = "Std" ):
     if( test_x is not None ):
         test_x = scaler.transform(test_x)
     return train_x, test_x
+
+# deal with outliers
+def xpr_outlier( train_x, test_x, replacer = "upper"  ):
+    outliers = []
+    for i in range( train_x.shape[1] ):
+        q1 = np.percentile(train_x[:, i], 25)
+        q3 = np.percentile(train_x[:, i], 75)
+
+        upper_bound = q3 + 1.5 * (q3 - q1)
+        replace_value = upper_bound
+        if replacer == "upper":
+            replace_value = upper_bound
+        elif replacer == "median":
+            replace_value = np.median(train_x[:, i])
+        else:
+            replace_value = np.mean(train_x[:, i])
+        train_x[:, i] = np.where(train_x[:, i] > upper_bound, replace_value, train_x[:, i])
+        test_x[:,i] = np.where(test_x[:,i] > upper_bound, replace_value, test_x[:,i])
+
+        return train_x, test_x
 

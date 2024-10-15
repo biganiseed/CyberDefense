@@ -148,3 +148,6 @@ src/BiRNN_Running_Code/data_representation/res_run
 src/RNN_Running_Code/RNN_Run/experiment
 src/RNN_Running_Code/RNN_Run/res_acc
 src/RNN_Running_Code/RNN_Run/res_run
+catboost_info
+lightgbm_results_slammer.csv
+totalNumFiles_15.csv

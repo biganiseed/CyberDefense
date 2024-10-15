@@ -20,14 +20,12 @@ def concatenate_datasets(datasets):
         result = np.concatenate((result, dataset), axis=0)
     return result
 
-def preprocess( dataset, div = 1 ):
-    row_index_end = dataset.shape[0] - dataset.shape[0] % div  # divisible by div, but What is div for?
-    data_x = dataset[:row_index_end, 4:-1]
-
-    data_y = dataset[:row_index_end, -1]
+def preprocess( dataset, normal_label = 2 ):
+    data_x = dataset[:, 4:-1]
+    data_y = dataset[:, -1]
     # Change training labels
     inds1 = np.where(data_y == -1)
-    data_y[inds1] = 2
+    data_y[inds1] = normal_label
     return data_x,data_y
 
 from src.VFBLS_v110.bls.processing.one_hot_m import one_hot_m
@@ -115,6 +113,7 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     scaleType = kwargs.get("scaleType", "Std")
     results_file = kwargs.get("results_file", "src/STAT/xpr_results.csv")
     datasets = kwargs.get("datasets", load_historical_datasets())
+    normal_label = kwargs.get("normal_label", 2)
 
     # Print the information of the data combinations
     for combo in data_combos:
@@ -144,8 +143,8 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
             test_dataset = aggregate_rows(raw_test_dataset, time_span, sliding_window)
             train_dataset = concatenate_datasets(train_datasets)
             
-            train_x, train_y = preprocess(train_dataset)
-            test_x, test_y = preprocess(test_dataset)
+            train_x, train_y = preprocess(train_dataset, normal_label)
+            test_x, test_y = preprocess(test_dataset, normal_label)
             train_x, test_x = norm( train_x, test_x, scaleType)
 
             old_stdout = blockPrint()

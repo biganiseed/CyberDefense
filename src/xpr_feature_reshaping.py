@@ -53,22 +53,33 @@ import numpy as np
     the output will be: [[-1], [1], [1], [-1], [-1]] without sliding_window.
     With sliding window, the output will be: [[-1], [-1], [-1], [1], [1], [1], [1], [-1], [-1], [-1]]
 """
+aggregate_rows_cache = {}
 def aggregate_rows(arr, n, sliding_window=False, agg_type="origin"):
-    # Apply different aggregation functions to different columns
-    coloumns_to_keep = [0, 1, 2, 3]
-    # Set items with feature number.
-    columns_to_sum = [1, 2, 3, 4, 8, 9, 10, 12, 34, 35, 36]
-    columns_to_mean = [5, 7, 13, 37]
-    columns_to_max = [6, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]  
-    # Make it index of columns.
-    columns_to_sum = [x+3 for x in columns_to_sum]
-    columns_to_mean = [x+3 for x in columns_to_mean]
-    columns_to_max = [x+3 for x in columns_to_max]
-
-    if sliding_window:
-        return aggregate_rows_with_sliding_window(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type=agg_type)
+    # Generage cache key with all the parameters.
+    cache_key = f"{id(arr)}_{n}_{sliding_window}_{agg_type}"
+    if cache_key in aggregate_rows_cache:
+        # print(f"Cache hit for {cache_key}")
+        pass
     else:
-        return aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type=agg_type )
+        # Apply different aggregation functions to different columns
+        coloumns_to_keep = [0, 1, 2, 3]
+        # Set items with feature number.
+        columns_to_sum = [1, 2, 3, 4, 8, 9, 10, 12, 34, 35, 36]
+        columns_to_mean = [5, 7, 13, 37]
+        columns_to_max = [6, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]  
+        # Make it index of columns.
+        columns_to_sum = [x+3 for x in columns_to_sum]
+        columns_to_mean = [x+3 for x in columns_to_mean]
+        columns_to_max = [x+3 for x in columns_to_max]
+
+        if sliding_window:
+            result = aggregate_rows_with_sliding_window(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type=agg_type)
+        else:
+            result = aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type=agg_type )
+        
+        aggregate_rows_cache[cache_key] = result
+    return aggregate_rows_cache[cache_key]
+    
 
 def aggregate_rows_directly(arr, n, coloumns_to_keep, columns_to_sum, columns_to_mean, columns_to_max, agg_type="origin"):
     # Calculate the number of rows to keep to ensure the number of rows is a multiple of n

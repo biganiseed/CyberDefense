@@ -114,7 +114,7 @@ def xpr_test( raw_train_datasets, raw_test_dataset, time_span, normtype="Power",
 def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     sliding_window = kwargs.get("sliding_window", False)
     scaleType = kwargs.get("scaleType", "Std")
-    results_file = kwargs.get("results_file", "src/STAT/xpr_results.csv")
+    results_file = "src/STAT/" + kwargs.get("results_file", "xpr_results.csv")
     datasets = kwargs.get("datasets", load_historical_datasets())
     normal_label = kwargs.get("normal_label", 2)
     enable_print = kwargs.get("enable_print", False)
@@ -153,7 +153,9 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
             test_x, test_y = preprocess(test_dataset, dataModulo, normal_label)
             train_x, test_x = norm( train_x, test_x, scaleType)
 
-            if not enable_print: 
+            if enable_print: 
+                old_stdout = None
+            else:
                 old_stdout = blockPrint()
             predicted_list = algorithm(train_x, train_y, test_x)
             if old_stdout is not None: 
@@ -185,7 +187,9 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     return results
 
 # Plot the results of the aggregation test
-def plot_aggregation_test_results(results, time_span_list):
+def plot_aggregation_test_results(results, time_span_list, **kwargs):
+    title = kwargs.get("title", "")
+    plot_precision_and_recall = kwargs.get("plot_precision_and_recall", True)
     # Plot each series in a subplot
     def subplot(label, series, ax, data_column):
         for series in series:
@@ -216,14 +220,18 @@ def plot_aggregation_test_results(results, time_span_list):
         ax.set_ylim(0, 100)
         ax.set_xticks(time_span_list)
         ax.legend()
-        # fig.suptitle('Comparison of different time spans')
 
     series = np.unique(results[1:, 1])
-    fig, ((ax1, ax2),(ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    if plot_precision_and_recall:
+        fig, ((ax1, ax2),(ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    else:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    fig.suptitle(title)
     subplot('Accuracy', series, ax1, 3)
-    subplot('Fscore', series, ax2, 4)
-    subplot('Precision', series, ax3, 5)
-    subplot('Recall',series, ax4, 6)
+    subplot('F1 Score', series, ax2, 4)
+    if plot_precision_and_recall:
+        subplot('Precision', series, ax3, 5)
+        subplot('Recall',series, ax4, 6)
 
     plt.tight_layout()
     plt.show()    

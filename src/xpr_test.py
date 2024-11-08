@@ -121,6 +121,11 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     normal_label = kwargs.get("normal_label", 2)
     enable_print = kwargs.get("enable_print", False)
     dataModulo = kwargs.get("dataModulo", 1)
+    outlier = kwargs.get("outlier", None)
+    agg_type = kwargs.get("agg_type", "origin")
+
+    print("outlier:", outlier)
+    print("agg_type:", agg_type)
 
 
     # Print the information of the data combinations
@@ -141,7 +146,7 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     for time_span in time_span_list:
         print(f"------------------------------ Time span: {time_span} ------------------------------")
         _sliding_window = sliding_window if time_span > 1 else False
-        _scaleType = scaleType if time_span > 1 else "Std"
+        _scaleType = scaleType
         averages = np.zeros(len(header)-3)
         for combo in data_combos:
             raw_train_datasets = []
@@ -149,12 +154,15 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
                 raw_train_datasets.append(datasets[name])
             raw_test_dataset = datasets[combo["test"]]
             print(f"Data combo: {combo}")
-            train_datasets = aggregate_datasets(raw_train_datasets, time_span, _sliding_window)
-            test_dataset = aggregate_rows(raw_test_dataset, time_span, _sliding_window)
+            train_datasets = aggregate_datasets(raw_train_datasets, time_span, _sliding_window, agg_type=agg_type)
+            test_dataset = aggregate_rows(raw_test_dataset, time_span, _sliding_window, agg_type=agg_type)
             train_dataset = concatenate_datasets(train_datasets)
             
             train_x, train_y = preprocess(train_dataset, dataModulo, normal_label)
             test_x, test_y = preprocess(test_dataset, dataModulo, normal_label)
+
+            train_x, test_x = xpr_outlier( train_x, test_x, replacer = outlier )
+
             train_x, test_x = norm( train_x, test_x, _scaleType)
 
             if enable_print: 
@@ -222,7 +230,7 @@ def plot_aggregation_test_results(results, time_span_list, **kwargs):
         ax.set_xlabel('Time Span')
         ax.set_ylabel(label)
         ax.set_xlim(left=1)
-        # ax.set_ylim(0, 100)
+        ax.set_ylim(0, 100)
         ax.set_xticks(time_span_list)
         ax.legend()
 

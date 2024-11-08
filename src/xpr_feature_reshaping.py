@@ -234,6 +234,9 @@ def norm( train_x, test_x, scaleType = "Std" ):
 
 # deal with outliers
 def xpr_outlier( train_x, test_x, replacer = "upper"  ):
+    if replacer == None:
+        return train_x, test_x 
+    
     outliers = []
     for i in range( train_x.shape[1] ):
         q1 = np.percentile(train_x[:, i], 25)

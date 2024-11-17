@@ -33,6 +33,7 @@ from numpy.linalg import inv
 # torch.cuda.is_available()
 
 # Import customized libraries
+sys.path.append('./src/VFBLS_v110')
 # sys.path.append("..")
 from bls.processing.result import result
 from bls.processing.sparse_bls import sparse_bls

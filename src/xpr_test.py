@@ -121,7 +121,8 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     normal_label = kwargs.get("normal_label", 2)
     enable_print = kwargs.get("enable_print", False)
     dataModulo = kwargs.get("dataModulo", 1)
-    outlier = kwargs.get("outlier", None)
+    # outlier = kwargs.get("outlier", "None")
+    outlier = kwargs.get("outlier", "upper")
     agg_type = kwargs.get("agg_type", "origin")
 
     print("outlier:", outlier)
@@ -143,10 +144,15 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     header = ["Train datasets", "Test datasets", "Time span", "Accuracy %", "Fscore %", "Precision %", "Recall %"]
     results = []
     average_results = []
-    for time_span in time_span_list:
+    time_span_list = [0] + time_span_list
+    for i, time_span in enumerate(time_span_list):
         print(f"------------------------------ Time span: {time_span} ------------------------------")
-        _sliding_window = sliding_window if time_span > 1 else False
-        _scaleType = scaleType
+        # Don't apply any refinement if time span is 1
+        _sliding_window = sliding_window if i > 0 else False
+        _outlier = outlier if i > 0  else None
+        _scaleType = scaleType if i > 0  else "Std"
+        _agg_type = agg_type if i > 0  else "origin"
+
         averages = np.zeros(len(header)-3)
         for combo in data_combos:
             raw_train_datasets = []
@@ -154,14 +160,14 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
                 raw_train_datasets.append(datasets[name])
             raw_test_dataset = datasets[combo["test"]]
             print(f"Data combo: {combo}")
-            train_datasets = aggregate_datasets(raw_train_datasets, time_span, _sliding_window, agg_type=agg_type)
-            test_dataset = aggregate_rows(raw_test_dataset, time_span, _sliding_window, agg_type=agg_type)
+            train_datasets = aggregate_datasets(raw_train_datasets, time_span, _sliding_window, agg_type = _agg_type)
+            test_dataset = aggregate_rows(raw_test_dataset, time_span, _sliding_window, agg_type = _agg_type)
             train_dataset = concatenate_datasets(train_datasets)
             
             train_x, train_y = preprocess(train_dataset, dataModulo, normal_label)
             test_x, test_y = preprocess(test_dataset, dataModulo, normal_label)
 
-            train_x, test_x = xpr_outlier( train_x, test_x, replacer = outlier )
+            train_x, test_x = xpr_outlier( train_x, test_x, replacer = _outlier )
 
             train_x, test_x = norm( train_x, test_x, _scaleType)
 
@@ -200,7 +206,9 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
 
 # Plot the results of the aggregation test
 def plot_aggregation_test_results(results, time_span_list, **kwargs):
+    time_span_list = [0] + time_span_list
     title = kwargs.get("title", "")
+    auto_y = kwargs.get("auto_y", False)
     plot_precision_and_recall = kwargs.get("plot_precision_and_recall", True)
     plot_height = kwargs.get("plot_height", 6)
     # Plot each series in a subplot
@@ -230,7 +238,8 @@ def plot_aggregation_test_results(results, time_span_list, **kwargs):
         ax.set_xlabel('Time Span')
         ax.set_ylabel(label)
         ax.set_xlim(left=1)
-        ax.set_ylim(0, 100)
+        if not auto_y:
+            ax.set_ylim(0, 100)
         ax.set_xticks(time_span_list)
         ax.legend()
 

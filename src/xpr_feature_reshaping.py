@@ -251,8 +251,10 @@ def xpr_outlier( train_x, test_x, replacer = "upper"  ):
             replace_value = upper_bound
         elif replacer == "median":
             replace_value = np.median(train_x[:, i])
-        else:
+        elif replacer == "mean":
             replace_value = np.mean(train_x[:, i])
+        else:
+            raise ValueError("Invalid replacer: " + replacer)            
         train_x[:, i] = np.where(train_x[:, i] > upper_bound, replace_value, train_x[:, i])
         test_x[:,i] = np.where(test_x[:,i] > upper_bound, replace_value, test_x[:,i])
 

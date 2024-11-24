@@ -121,9 +121,15 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
     normal_label = kwargs.get("normal_label", 2)
     enable_print = kwargs.get("enable_print", False)
     dataModulo = kwargs.get("dataModulo", 1)
-    # outlier = kwargs.get("outlier", "None")
     outlier = kwargs.get("outlier", "upper")
+    # outlier = kwargs.get("outlier", None) # It's better to use None when applying on test dataset only.
     agg_type = kwargs.get("agg_type", "origin")
+    apply_on_training = kwargs.get("apply_on_training", True)
+    # apply_on_training = kwargs.get("apply_on_training", False)
+    apply_on_test = kwargs.get("apply_on_test", True)    
+    if not apply_on_training or not apply_on_test:
+        scaleType = "zscore"
+
 
     print("outlier:", outlier)
     print("agg_type:", agg_type)
@@ -160,14 +166,18 @@ def aggregation_test(algorithm, time_span_list, data_combos, **kwargs):
                 raw_train_datasets.append(datasets[name])
             raw_test_dataset = datasets[combo["test"]]
             print(f"Data combo: {combo}")
-            train_datasets = aggregate_datasets(raw_train_datasets, time_span, _sliding_window, agg_type = _agg_type)
-            test_dataset = aggregate_rows(raw_test_dataset, time_span, _sliding_window, agg_type = _agg_type)
+            train_datasets = aggregate_datasets(raw_train_datasets, time_span if apply_on_training else 1, _sliding_window, agg_type = _agg_type)
+            test_dataset = aggregate_rows(raw_test_dataset, time_span if apply_on_test else 1, _sliding_window, agg_type = _agg_type)
             train_dataset = concatenate_datasets(train_datasets)
             
             train_x, train_y = preprocess(train_dataset, dataModulo, normal_label)
             test_x, test_y = preprocess(test_dataset, dataModulo, normal_label)
 
-            train_x, test_x = xpr_outlier( train_x, test_x, replacer = _outlier )
+            _train_x, _test_x = xpr_outlier( train_x, test_x, replacer = _outlier )
+            if apply_on_training:
+                train_x = _train_x
+            if apply_on_test:
+                test_x = _test_x
 
             train_x, test_x = norm( train_x, test_x, _scaleType)
 
